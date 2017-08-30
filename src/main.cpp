@@ -2,6 +2,8 @@
 #include <iostream>
 #include <string>
 
+using namespace std;
+
 template<typename K, typename V>
 class HashItem {
   public:
@@ -36,40 +38,89 @@ class HashItem {
     HashItem * next;
 };
 
-template<typename K, typename V, typename H = std::hash<K> >
+template<typename K, typename V, typename H = hash<K> >
 class HashMap {
   public:
-    HashMap(std::size_t bucketSize = 16) {
+    HashMap(size_t bucketSize = 16) {
       this->bucketSize = bucketSize;
       this->bucket = new HashItem<K, V> * [bucketSize]();
     }
 
-    bool put(const K key, const V value) {
-      std::cout << getBucketIndex(key) << std::endl;
+    bool set(const K key, const V value) {
+      size_t hashVal = getBucketIndex(key);
+      HashItem<K, V> * prevItem = nullptr;
+      HashItem<K, V> * item = bucket[hashVal];
+
+      while (item != nullptr && item->getKey() != key) {
+        prevItem = item;
+        item = item->getNext();
+      }
+
+      if (item == nullptr) {
+        item = new HashItem<K, V>(key, value);
+        if (prevItem != nullptr) {
+          prevItem->setNext(item);
+        }
+      } else {
+        item->setValue(value);
+      }
+
+      bucket[hashVal] = item;
+
       return true;
     }
+
+    V get(const K key) {
+      size_t hashVal = getBucketIndex(key);
+      HashItem<K, V> * item = bucket[hashVal];
+      
+      while (item != nullptr) {
+        if (item->getKey() == key) {
+          return item->getValue();
+        } else {
+          item = item->getNext();
+        }
+      }
+
+      return "false";
+    }
   private:
-    std::size_t bucketSize;
+    size_t bucketSize;
     HashItem<K, V> * * bucket;
     H hash;
 
-    std::size_t getBucketIndex(const K key) {
+    size_t getBucketIndex(const K key) {
       return hash(key) % bucketSize;
     }
 };
 
 int main() {
-  HashItem<int, std::string> * item1 = new HashItem<int, std::string>(1, "test1");
-  HashItem<int, std::string> * item2 = new HashItem<int, std::string>(2, "test2");
+  HashMap<string, string> * map = new HashMap<string, string>(16);
 
-  HashMap<std::string, std::string> * map = new HashMap<std::string, std::string>();
+  map->set("one", "foo");
+  cout << "one == " << map->get("one") << endl;
+  cout << "two == " << map->get("two") << endl;
 
-  map->put("foo", "test1");
+  map->set("one", "bar");
+  cout << "one == " << map->get("one") << endl;
+  cout << "two == " << map->get("two") << endl;
 
-  item1->setNext(item2);
+  map->set("one", "baz");
+  cout << "one == " << map->get("one") << endl;
+  cout << "two == " << map->get("two") << endl;
 
-  std::cout << item1->getValue() << std::endl;
-  std::cout << item1->getNext()->getValue() << std::endl;
+  map->set("two", "foo");
+  cout << "one == " << map->get("one") << endl;
+  cout << "two == " << map->get("two") << endl;
+
+  map->set("two", "bar");
+  cout << "one == " << map->get("one") << endl;
+  cout << "two == " << map->get("two") << endl;
+
+  map->set("two", "baz");
+  cout << "one == " << map->get("one") << endl;
+  cout << "two == " << map->get("two") << endl;
+
   return 0;
 }
 
