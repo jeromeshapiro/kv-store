@@ -1,4 +1,3 @@
-#include <vector>
 #include <iostream>
 #include <string>
 
@@ -65,8 +64,6 @@ class HashMap {
         item->setValue(value);
       }
 
-      bucket[hashVal] = item;
-
       return true;
     }
 
@@ -81,8 +78,9 @@ class HashMap {
           item = item->getNext();
         }
       }
-
-      return "false";
+      
+      V empty;
+      return empty;
     }
   private:
     size_t bucketSize;
@@ -95,7 +93,7 @@ class HashMap {
 };
 
 int main() {
-  HashMap<string, string> * map = new HashMap<string, string>(16);
+  HashMap<string, string> * map = new HashMap<string, string>(1);
 
   map->set("one", "foo");
   cout << "one == " << map->get("one") << endl;
