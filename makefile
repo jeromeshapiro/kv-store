@@ -1,7 +1,8 @@
 CC = g++
+FLAGS = -std=c++11
 SRC = src/main.cpp
 TARGET = bin/test
 
 all: $(SRC)
-	$(CC) -o $(TARGET) $(SRC)
+	$(CC) $(FLAGS) -o $(TARGET) $(SRC)
 
