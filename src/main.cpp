@@ -96,30 +96,13 @@ class HashMap {
     }
 };
 
-void declareMapValues(HashMap<int, string> * map) {
-  cout << "one == " << map->get(1) << " & two == " << map->get(2) << endl;
-}
-
 int main() {
-  HashMap<int, string> map;
+  HashMap<int, string> map(1000000);
 
-  map.set(1, "foo");
-  declareMapValues(&map);
-
-  map.set(1, "bar");
-  declareMapValues(&map);
-
-  map.set(1, "baz");
-  declareMapValues(&map);
-
-  map.set(2, "foo");
-  declareMapValues(&map);
-
-  map.set(2, "bar");
-  declareMapValues(&map);
-
-  map.set(2, "baz");
-  declareMapValues(&map);
+  for (int i = 0; i < 1000000; i++) {
+    map.set(i, "foo");
+    map.get(i);
+  }
 
   return 0;
 }
