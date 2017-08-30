@@ -57,7 +57,9 @@ class HashMap {
 
       if (item == nullptr) {
         item = new HashItem<K, V>(key, value);
-        if (prevItem != nullptr) {
+        if (prevItem == nullptr) {
+          bucket[hashVal] = item;
+        } else {
           prevItem->setNext(item);
         }
       } else {
