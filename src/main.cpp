@@ -31,6 +31,7 @@ class HashItem {
     void setNext(HashItem<K, V> * item) {
       this->next = item;
     }
+
   private:
     K key;
     V value;
@@ -84,6 +85,7 @@ class HashMap {
       V empty;
       return empty;
     }
+
   private:
     size_t bucketSize;
     HashItem<K, V> * * bucket;
@@ -94,32 +96,30 @@ class HashMap {
     }
 };
 
+void declareMapValues(HashMap<int, string> * map) {
+  cout << "one == " << map->get(1) << " & two == " << map->get(2) << endl;
+}
+
 int main() {
-  HashMap<string, string> * map = new HashMap<string, string>(1);
+  HashMap<int, string> map;
 
-  map->set("one", "foo");
-  cout << "one == " << map->get("one") << endl;
-  cout << "two == " << map->get("two") << endl;
+  map.set(1, "foo");
+  declareMapValues(&map);
 
-  map->set("one", "bar");
-  cout << "one == " << map->get("one") << endl;
-  cout << "two == " << map->get("two") << endl;
+  map.set(1, "bar");
+  declareMapValues(&map);
 
-  map->set("one", "baz");
-  cout << "one == " << map->get("one") << endl;
-  cout << "two == " << map->get("two") << endl;
+  map.set(1, "baz");
+  declareMapValues(&map);
 
-  map->set("two", "foo");
-  cout << "one == " << map->get("one") << endl;
-  cout << "two == " << map->get("two") << endl;
+  map.set(2, "foo");
+  declareMapValues(&map);
 
-  map->set("two", "bar");
-  cout << "one == " << map->get("one") << endl;
-  cout << "two == " << map->get("two") << endl;
+  map.set(2, "bar");
+  declareMapValues(&map);
 
-  map->set("two", "baz");
-  cout << "one == " << map->get("one") << endl;
-  cout << "two == " << map->get("two") << endl;
+  map.set(2, "baz");
+  declareMapValues(&map);
 
   return 0;
 }
