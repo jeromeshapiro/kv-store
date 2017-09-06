@@ -4,12 +4,16 @@
 using namespace std;
 
 template<typename K, typename V>
-class HashItem {
+class HashNode {
   public:
-    HashItem(const K key, const V value) {
+    HashNode(const K key, const V value) {
       this->key = key;
       this->value = value;
       this->next = nullptr;
+    }
+
+    ~HashNode() {
+      cout << "deleting node" << endl;
     }
 
     K getKey() {
@@ -24,18 +28,18 @@ class HashItem {
       this->value = value;
     }
 
-    HashItem * getNext() {
+    HashNode * getNext() {
       return next;
     }
 
-    void setNext(HashItem<K, V> * item) {
-      this->next = item;
+    void setNext(HashNode<K, V> * node) {
+      this->next = node;
     }
 
   private:
     K key;
     V value;
-    HashItem * next;
+    HashNode * next;
 };
 
 template<typename K, typename V, typename H = hash<K> >
@@ -43,42 +47,42 @@ class HashMap {
   public:
     HashMap(size_t bucketSize = 16) {
       this->bucketSize = bucketSize;
-      this->bucket = new HashItem<K, V> * [bucketSize]();
+      this->bucket = new HashNode<K, V> * [bucketSize]();
     }
 
     bool set(const K key, const V value) {
-      size_t hashVal = getBucketIndex(key);
-      HashItem<K, V> * prevItem = nullptr;
-      HashItem<K, V> * item = bucket[hashVal];
+      size_t bucketIndex = getBucketIndex(key);
+      HashNode<K, V> * prevNode = nullptr;
+      HashNode<K, V> * node = bucket[bucketIndex];
 
-      while (item != nullptr && item->getKey() != key) {
-        prevItem = item;
-        item = item->getNext();
+      while (node != nullptr && node->getKey() != key) {
+        prevNode = node;
+        node = node->getNext();
       }
 
-      if (item == nullptr) {
-        item = new HashItem<K, V>(key, value);
-        if (prevItem == nullptr) {
-          bucket[hashVal] = item;
+      if (node == nullptr) {
+        node = new HashNode<K, V>(key, value);
+        if (prevNode == nullptr) {
+          bucket[bucketIndex] = node;
         } else {
-          prevItem->setNext(item);
+          prevNode->setNext(node);
         }
       } else {
-        item->setValue(value);
+        node->setValue(value);
       }
 
       return true;
     }
 
     V get(const K key) {
-      size_t hashVal = getBucketIndex(key);
-      HashItem<K, V> * item = bucket[hashVal];
-      
-      while (item != nullptr) {
-        if (item->getKey() == key) {
-          return item->getValue();
+      size_t bucketIndex = getBucketIndex(key);
+      HashNode<K, V> * node = bucket[bucketIndex];
+
+      while (node != nullptr) {
+        if (node->getKey() == key) {
+          return node->getValue();
         } else {
-          item = item->getNext();
+          node = node->getNext();
         }
       }
       
@@ -86,9 +90,27 @@ class HashMap {
       return empty;
     }
 
+    bool remove(const K key) {
+      size_t bucketIndex = getBucketIndex(key);
+      HashNode<K, V> * prevNode = nullptr;
+      HashNode<K, V> * node = bucket[bucketIndex];
+
+      while (node != nullptr && node->getKey() != key) {
+        prevNode = node;
+        node = node->getNext();
+      }
+
+      if (prevNode != nullptr) {
+        prevNode->setNext(node->getNext());
+      }
+      delete node;
+
+      return false;
+    }
+
   private:
     size_t bucketSize;
-    HashItem<K, V> * * bucket;
+    HashNode<K, V> * * bucket;
     H hash;
 
     size_t getBucketIndex(const K key) {
@@ -97,12 +119,19 @@ class HashMap {
 };
 
 int main() {
-  HashMap<int, string> map(1000000);
+  HashMap<int, string> map(1);
 
-  for (int i = 0; i < 1000000; i++) {
-    map.set(i, "foo");
-    map.get(i);
+  for (int i = 0; i < 10; i++) {
+    map.set(i, "foo" + to_string(i));
   }
+
+  cout << "4 equals " << map.get(4) << endl;
+  cout << "5 equals " << map.get(5) << endl;
+  cout << "6 equals " << map.get(6) << endl;
+  map.remove(5);
+  cout << "4 equals " << map.get(4) << endl;
+  cout << "5 equals " << map.get(5) << endl;
+  cout << "6 equals " << map.get(6) << endl;
 
   return 0;
 }
