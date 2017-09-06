@@ -51,7 +51,7 @@ class HashMap {
     }
 
     V get(const K key) {
-      size_t index = getBucketIndex(key);
+      size_t index = getBucketIndex(key, bucketCount);
       HashNode<K, V> * node = buckets[index];
 
       while (node != nullptr) {
@@ -67,15 +67,19 @@ class HashMap {
     }
 
     bool set(const K key, const V value) {
-      return insert(key, value);
+      inflateBuckets();
+      size_t index = getBucketIndex(key, bucketCount);
+      return insert(buckets, index, key, value);
     }
 
     bool put(const K key, const V value) {
-      return insert(key, value, true);
+      inflateBuckets();
+      size_t index = getBucketIndex(key, bucketCount);
+      return insert(buckets, index, key, value, true);
     }
 
     bool remove(const K key) {
-      size_t index = getBucketIndex(key);
+      size_t index = getBucketIndex(key, bucketCount);
       HashNode<K, V> * prevNode = nullptr;
       HashNode<K, V> * node = buckets[index];
 
@@ -110,19 +114,14 @@ class HashMap {
   private:
     size_t itemCount;
     size_t bucketCount;
-    HashNode<K, V> * * buckets;
+    HashNode<K, V> ** buckets;
     H hash;
 
-    size_t getBucketIndex(const K key) {
+    size_t getBucketIndex(const K key, const size_t bucketCount) {
       return hash(key) % bucketCount;
     }
 
-    bool insert(const K key, const V value, const bool upsert = false) {
-      if (bucketsHaveReachedThreshold()) {
-        inflateBuckets();
-      }
-
-      size_t index = getBucketIndex(key);
+    bool insert(HashNode<K, V> ** buckets, const size_t index, const K key, const V value, const bool upsert = false) {
       HashNode<K, V> * prevNode = nullptr;
       HashNode<K, V> * node = buckets[index];
 
@@ -138,7 +137,7 @@ class HashMap {
         } else {
           prevNode->setNext(node);
         }
-        itemCount++;
+        itemCount++; 
         return true;
       }
       
@@ -150,30 +149,46 @@ class HashMap {
       return false;
     }
 
+    void clearBucket(HashNode<K, V> ** buckets, const size_t index) {
+      HashNode<K, V> * node = buckets[index];
+      while (node != nullptr) {
+        HashNode<K, V> * prevNode = node;
+        delete prevNode;
+        itemCount--;
+        node = node->getNext();
+      }
+      buckets[index] = nullptr;
+    }
+
     void clearBuckets(HashNode<K, V> ** buckets, const size_t bucketCount) {
       for (int index = 0; index < bucketCount; index++) {
-        HashNode<K, V> * node = buckets[index];
-        while (node != nullptr) {
-          HashNode<K, V> * prevNode = node;
-          delete prevNode;
-          itemCount--;
-          node = node->getNext();
-        }
-        buckets[index] = nullptr;
+        clearBucket(buckets, index);
       }
     }
 
     void inflateBuckets() {
       const size_t newBucketCount = bucketCount * 2;
-      HashNode<K, V> * * newBuckets = new HashNode<K, V> * [newBucketCount]();
+      HashNode<K, V> ** newBuckets = new HashNode<K, V> * [newBucketCount]();
 
-      cout << "inflating bucket array to " << newBucketCount << endl;
+      cout << "inflating bucket array from " << bucketCount << endl;
 
-      delete[] newBuckets;
+      for (int index = 0; index < bucketCount; index++) {
+        HashNode<K, V> * node = buckets[index];
+        while (node != nullptr) {
+          size_t inflatedIndex = getBucketIndex(node->getKey(), newBucketCount);
+          insert(newBuckets, inflatedIndex, node->getKey(), node->getValue());
+          node = node->getNext();
+        }
+        clearBucket(buckets, index);
+      }
+
+      delete[] buckets;
+      buckets = newBuckets;
+      bucketCount = newBucketCount;
     }
 
     bool bucketsHaveReachedThreshold() {
-      return false; // insert threshold check here
+      return true; // TODO insert threshold check here
     }
 };
 
@@ -182,6 +197,8 @@ int main() {
 
   for (int i = 0; i < 10; i++) {
     map.set(i, "foo" + to_string(i));
+    cout << "creating " << map.get(i) << endl;
+    cout << "map size = " << map.count() << endl;
   }
 
   cout << "4 equals " << map.get(4) << endl;
