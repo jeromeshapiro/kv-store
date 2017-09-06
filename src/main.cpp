@@ -41,7 +41,7 @@ class HashNode {
 template<typename K, typename V, typename H = hash<K> >
 class HashMap {
   public:
-    HashMap(size_t bucketCount = 1000000) {
+    HashMap(size_t bucketCount = 4096) {
       if (bucketCount == 0) {
         bucketCount = 1;
       }
@@ -51,8 +51,8 @@ class HashMap {
     }
 
     V get(const K key) {
-      size_t bucketIndex = getBucketIndex(key);
-      HashNode<K, V> * node = buckets[bucketIndex];
+      size_t index = getBucketIndex(key);
+      HashNode<K, V> * node = buckets[index];
 
       while (node != nullptr) {
         if (node->getKey() == key) {
@@ -67,35 +67,17 @@ class HashMap {
     }
 
     bool set(const K key, const V value) {
-      size_t bucketIndex = getBucketIndex(key);
-      HashNode<K, V> * prevNode = nullptr;
-      HashNode<K, V> * node = buckets[bucketIndex];
+      return insert(key, value);
+    }
 
-      while (node != nullptr && node->getKey() != key) {
-        prevNode = node;
-        node = node->getNext();
-      }
-
-      if (node == nullptr) {
-        node = new HashNode<K, V>(key, value);
-        if (prevNode == nullptr) {
-          buckets[bucketIndex] = node;
-        } else {
-          prevNode->setNext(node);
-        }
-
-        itemCount++;
-      } else {
-        node->setValue(value);
-      }
-
-      return true;
+    bool put(const K key, const V value) {
+      return insert(key, value, true);
     }
 
     bool remove(const K key) {
-      size_t bucketIndex = getBucketIndex(key);
+      size_t index = getBucketIndex(key);
       HashNode<K, V> * prevNode = nullptr;
-      HashNode<K, V> * node = buckets[bucketIndex];
+      HashNode<K, V> * node = buckets[index];
 
       while (node != nullptr && node->getKey() != key) {
         prevNode = node;
@@ -106,9 +88,8 @@ class HashMap {
         if (prevNode != nullptr) {
           prevNode->setNext(node->getNext());
         } else {
-          buckets[bucketIndex] = nullptr;
+          buckets[index] = nullptr;
         }
-
         delete node;
         itemCount--;
 
@@ -116,6 +97,10 @@ class HashMap {
       }
 
       return false;
+    }
+
+    void clear() {
+      clearBuckets(buckets, bucketCount);
     }
 
     size_t count() {
@@ -131,6 +116,65 @@ class HashMap {
     size_t getBucketIndex(const K key) {
       return hash(key) % bucketCount;
     }
+
+    bool insert(const K key, const V value, const bool upsert = false) {
+      if (bucketsHaveReachedThreshold()) {
+        inflateBuckets();
+      }
+
+      size_t index = getBucketIndex(key);
+      HashNode<K, V> * prevNode = nullptr;
+      HashNode<K, V> * node = buckets[index];
+
+      while (node != nullptr && node->getKey() != key) {
+        prevNode = node;
+        node = node->getNext();
+      }
+
+      if (node == nullptr) {
+        node = new HashNode<K, V>(key, value);
+        if (prevNode == nullptr) {
+          buckets[index] = node;
+        } else {
+          prevNode->setNext(node);
+        }
+        itemCount++;
+        return true;
+      }
+      
+      if (upsert == true) {
+        node->setValue(value);
+        return true;
+      }
+
+      return false;
+    }
+
+    void clearBuckets(HashNode<K, V> ** buckets, const size_t bucketCount) {
+      for (int index = 0; index < bucketCount; index++) {
+        HashNode<K, V> * node = buckets[index];
+        while (node != nullptr) {
+          HashNode<K, V> * prevNode = node;
+          delete prevNode;
+          itemCount--;
+          node = node->getNext();
+        }
+        buckets[index] = nullptr;
+      }
+    }
+
+    void inflateBuckets() {
+      const size_t newBucketCount = bucketCount * 2;
+      HashNode<K, V> * * newBuckets = new HashNode<K, V> * [newBucketCount]();
+
+      cout << "inflating bucket array to " << newBucketCount << endl;
+
+      delete[] newBuckets;
+    }
+
+    bool bucketsHaveReachedThreshold() {
+      return false; // insert threshold check here
+    }
 };
 
 int main() {
@@ -144,11 +188,15 @@ int main() {
   cout << "5 equals " << map.get(5) << endl;
   cout << "6 equals " << map.get(6) << endl;
   cout << "there are " << map.count() << " items in the map" << endl;
+  cout << "deleting key 5" << endl;
   map.remove(5);
   cout << "there are " << map.count() << " items in the map" << endl;
   cout << "4 equals " << map.get(4) << endl;
   cout << "5 equals " << map.get(5) << endl;
   cout << "6 equals " << map.get(6) << endl;
+  map.clear();
+  cout << "there are " << map.count() << " items in the map" << endl;
+  cout << "4 equals " << map.get(4) << endl;
 
   return 0;
 }
