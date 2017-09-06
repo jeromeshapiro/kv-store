@@ -12,11 +12,11 @@ class HashNode {
       this->next = nullptr;
     }
 
-    K getKey() {
+    const K getKey() const {
       return key;
     }
 
-    V getValue() {
+    const V getValue() const {
       return value;
     }
 
@@ -24,35 +24,35 @@ class HashNode {
       this->value = value;
     }
 
-    HashNode * getNext() {
+    HashNode* getNext() const {
       return next;
     }
 
-    void setNext(HashNode<K, V> * node) {
+    void setNext(HashNode<K, V>* node) {
       this->next = node;
     }
 
   private:
     K key;
     V value;
-    HashNode * next;
+    HashNode* next;
 };
 
 template<typename K, typename V, typename H = hash<K> >
 class HashMap {
   public:
-    HashMap(size_t bucketCount = 4096) {
+    HashMap(size_t bucketCount = 16) {
       if (bucketCount == 0) {
         bucketCount = 1;
       }
       this->itemCount = 0;
       this->bucketCount = bucketCount;
-      this->buckets = new HashNode<K, V> * [bucketCount]();
+      this->bucketArr = new HashNode<K, V>* [bucketCount]();
     }
 
     V get(const K key) {
       size_t index = getBucketIndex(key, bucketCount);
-      HashNode<K, V> * node = buckets[index];
+      HashNode<K, V>* node = this->bucketArr[index];
 
       while (node != nullptr) {
         if (node->getKey() == key) {
@@ -67,21 +67,17 @@ class HashMap {
     }
 
     bool set(const K key, const V value) {
-      inflateBuckets();
-      size_t index = getBucketIndex(key, bucketCount);
-      return insert(buckets, index, key, value);
+      return insert(key, value);
     }
 
     bool put(const K key, const V value) {
-      inflateBuckets();
-      size_t index = getBucketIndex(key, bucketCount);
-      return insert(buckets, index, key, value, true);
+      return insert(key, value, true);
     }
 
     bool remove(const K key) {
       size_t index = getBucketIndex(key, bucketCount);
-      HashNode<K, V> * prevNode = nullptr;
-      HashNode<K, V> * node = buckets[index];
+      HashNode<K, V>* prevNode = nullptr;
+      HashNode<K, V>* node = this->bucketArr[index];
 
       while (node != nullptr && node->getKey() != key) {
         prevNode = node;
@@ -92,11 +88,10 @@ class HashMap {
         if (prevNode != nullptr) {
           prevNode->setNext(node->getNext());
         } else {
-          buckets[index] = nullptr;
+          this->bucketArr[index] = nullptr;
         }
+        this->itemCount--;
         delete node;
-        itemCount--;
-
         return true;
       }
 
@@ -104,26 +99,36 @@ class HashMap {
     }
 
     void clear() {
-      clearBuckets(buckets, bucketCount);
+      this->itemCount = 0;
+      clearBucketArr(bucketArr, bucketCount);
     }
 
-    size_t count() {
+    size_t count() const {
       return itemCount;
     }
 
   private:
     size_t itemCount;
     size_t bucketCount;
-    HashNode<K, V> ** buckets;
+    HashNode<K, V>** bucketArr;
     H hash;
 
-    size_t getBucketIndex(const K key, const size_t bucketCount) {
+    size_t getBucketIndex(const K key, const size_t bucketCount) const {
       return hash(key) % bucketCount;
     }
 
-    bool insert(HashNode<K, V> ** buckets, const size_t index, const K key, const V value, const bool upsert = false) {
-      HashNode<K, V> * prevNode = nullptr;
-      HashNode<K, V> * node = buckets[index];
+    bool insert(const K key, const V value, const bool upsert = false) {
+      if (bucketArrHasReachedThreshold()) {
+        inflateBucketArr();
+      }
+      itemCount++;
+      size_t index = getBucketIndex(key, bucketCount);
+      return addToBucket(this->bucketArr, index, key, value, upsert);
+    }
+
+    bool addToBucket(HashNode<K, V>** bucketArr, const size_t index, const K key, const V value, const bool upsert = false) {
+      HashNode<K, V>* prevNode = nullptr;
+      HashNode<K, V>* node = bucketArr[index];
 
       while (node != nullptr && node->getKey() != key) {
         prevNode = node;
@@ -133,11 +138,10 @@ class HashMap {
       if (node == nullptr) {
         node = new HashNode<K, V>(key, value);
         if (prevNode == nullptr) {
-          buckets[index] = node;
+          bucketArr[index] = node;
         } else {
           prevNode->setNext(node);
         }
-        itemCount++; 
         return true;
       }
       
@@ -149,71 +153,63 @@ class HashMap {
       return false;
     }
 
-    void clearBucket(HashNode<K, V> ** buckets, const size_t index) {
-      HashNode<K, V> * node = buckets[index];
+    void clearBucket(HashNode<K, V>** bucketArr, const size_t index) {
+      HashNode<K, V>* node = bucketArr[index];
       while (node != nullptr) {
-        HashNode<K, V> * prevNode = node;
-        delete prevNode;
-        itemCount--;
+        HashNode<K, V>* prevNode = node;
         node = node->getNext();
+        delete prevNode;
       }
-      buckets[index] = nullptr;
     }
 
-    void clearBuckets(HashNode<K, V> ** buckets, const size_t bucketCount) {
+    void clearBucketArr(HashNode<K, V>** bucketArr, const size_t bucketCount) {
       for (int index = 0; index < bucketCount; index++) {
-        clearBucket(buckets, index);
+        clearBucket(bucketArr, index);
       }
     }
 
-    void inflateBuckets() {
+    void inflateBucketArr() {
       const size_t newBucketCount = bucketCount * 2;
-      HashNode<K, V> ** newBuckets = new HashNode<K, V> * [newBucketCount]();
+      HashNode<K, V>** newBucketArr = new HashNode<K, V>* [newBucketCount]();
 
-      cout << "inflating bucket array from " << bucketCount << endl;
+      //cout << "inflating bucket array from " << bucketCount << " to " << newBucketCount << " now we have " << this->collisions << " collisions and " << this->itemCount << " items." << endl;
 
-      for (int index = 0; index < bucketCount; index++) {
-        HashNode<K, V> * node = buckets[index];
+      for (int bucketArrIndex = 0; bucketArrIndex < bucketCount; bucketArrIndex++) {
+        HashNode<K, V>* node = this->bucketArr[bucketArrIndex];
         while (node != nullptr) {
-          size_t inflatedIndex = getBucketIndex(node->getKey(), newBucketCount);
-          insert(newBuckets, inflatedIndex, node->getKey(), node->getValue());
+          size_t newBucketArrIndex = getBucketIndex(node->getKey(), newBucketCount);
+          addToBucket(newBucketArr, newBucketArrIndex, node->getKey(), node->getValue());
           node = node->getNext();
         }
-        clearBucket(buckets, index);
+        clearBucket(bucketArr, bucketArrIndex);
       }
 
-      delete[] buckets;
-      buckets = newBuckets;
-      bucketCount = newBucketCount;
+      delete[] this->bucketArr;
+      this->bucketArr = newBucketArr;
+      this->bucketCount = newBucketCount;
     }
 
-    bool bucketsHaveReachedThreshold() {
-      return true; // TODO insert threshold check here
+    const bool bucketArrHasReachedThreshold() const {
+      return this->itemCount >= this->bucketCount * 0.6;
     }
 };
 
 int main() {
-  HashMap<unsigned long int, string> map;
+  HashMap<unsigned, string> map;
 
-  for (int i = 0; i < 10; i++) {
-    map.set(i, "foo" + to_string(i));
-    cout << "creating " << map.get(i) << endl;
-    cout << "map size = " << map.count() << endl;
+  for (int i = 0; i < 30000000; i++) {
+    map.set(i, "foo");
   }
-
-  cout << "4 equals " << map.get(4) << endl;
-  cout << "5 equals " << map.get(5) << endl;
-  cout << "6 equals " << map.get(6) << endl;
-  cout << "there are " << map.count() << " items in the map" << endl;
-  cout << "deleting key 5" << endl;
-  map.remove(5);
-  cout << "there are " << map.count() << " items in the map" << endl;
-  cout << "4 equals " << map.get(4) << endl;
-  cout << "5 equals " << map.get(5) << endl;
-  cout << "6 equals " << map.get(6) << endl;
-  map.clear();
-  cout << "there are " << map.count() << " items in the map" << endl;
-  cout << "4 equals " << map.get(4) << endl;
-
+  // cout << "4 equals " << map.get(4) << endl;
+  // cout << "5 equals " << map.get(5) << endl;
+  // cout << "there are " << map.count() << " items in the map" << endl;
+  // cout << "deleting key 5" << endl;
+  // map.remove(5);
+  // cout << "there are " << map.count() << " items in the map" << endl;
+  // cout << "4 equals " << map.get(4) << endl;
+  // cout << "5 equals " << map.get(5) << endl;
+  // //map.clear();
+  // cout << "there are " << map.count() << " items in the map" << endl;
+  // cout << "4 equals " << map.get(4) << endl;
   return 0;
 }
