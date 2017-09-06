@@ -12,10 +12,6 @@ class HashNode {
       this->next = nullptr;
     }
 
-    ~HashNode() {
-      cout << "deleting node" << endl;
-    }
-
     K getKey() {
       return key;
     }
@@ -45,7 +41,10 @@ class HashNode {
 template<typename K, typename V, typename H = hash<K> >
 class HashMap {
   public:
-    HashMap(size_t bucketSize = 16) {
+    HashMap(size_t bucketSize = 1000000) {
+      if (bucketSize == 0) {
+        bucketSize = 1;
+      }
       this->bucketSize = bucketSize;
       this->bucket = new HashNode<K, V> * [bucketSize]();
     }
@@ -121,7 +120,7 @@ class HashMap {
 };
 
 int main() {
-  HashMap<int, string> map(1000000);
+  HashMap<unsigned long long int, string> map;
 
   for (int i = 0; i < 10; i++) {
     map.set(i, "foo" + to_string(i));
@@ -137,4 +136,3 @@ int main() {
 
   return 0;
 }
-
