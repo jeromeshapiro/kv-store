@@ -41,41 +41,18 @@ class HashNode {
 template<typename K, typename V, typename H = hash<K> >
 class HashMap {
   public:
-    HashMap(size_t bucketSize = 1000000) {
-      if (bucketSize == 0) {
-        bucketSize = 1;
+    HashMap(size_t bucketCount = 1000000) {
+      if (bucketCount == 0) {
+        bucketCount = 1;
       }
-      this->bucketSize = bucketSize;
-      this->bucket = new HashNode<K, V> * [bucketSize]();
-    }
-
-    bool set(const K key, const V value) {
-      size_t bucketIndex = getBucketIndex(key);
-      HashNode<K, V> * prevNode = nullptr;
-      HashNode<K, V> * node = bucket[bucketIndex];
-
-      while (node != nullptr && node->getKey() != key) {
-        prevNode = node;
-        node = node->getNext();
-      }
-
-      if (node == nullptr) {
-        node = new HashNode<K, V>(key, value);
-        if (prevNode == nullptr) {
-          bucket[bucketIndex] = node;
-        } else {
-          prevNode->setNext(node);
-        }
-      } else {
-        node->setValue(value);
-      }
-
-      return true;
+      this->itemCount = 0;
+      this->bucketCount = bucketCount;
+      this->buckets = new HashNode<K, V> * [bucketCount]();
     }
 
     V get(const K key) {
       size_t bucketIndex = getBucketIndex(key);
-      HashNode<K, V> * node = bucket[bucketIndex];
+      HashNode<K, V> * node = buckets[bucketIndex];
 
       while (node != nullptr) {
         if (node->getKey() == key) {
@@ -89,38 +66,75 @@ class HashMap {
       return empty;
     }
 
-    bool remove(const K key) {
+    bool set(const K key, const V value) {
       size_t bucketIndex = getBucketIndex(key);
       HashNode<K, V> * prevNode = nullptr;
-      HashNode<K, V> * node = bucket[bucketIndex];
+      HashNode<K, V> * node = buckets[bucketIndex];
 
       while (node != nullptr && node->getKey() != key) {
         prevNode = node;
         node = node->getNext();
       }
 
-      if (prevNode != nullptr) {
-        prevNode->setNext(node->getNext());
+      if (node == nullptr) {
+        node = new HashNode<K, V>(key, value);
+        if (prevNode == nullptr) {
+          buckets[bucketIndex] = node;
+        } else {
+          prevNode->setNext(node);
+        }
+
+        itemCount++;
       } else {
-        bucket[bucketIndex] = nullptr;
+        node->setValue(value);
       }
-      delete node;
+
+      return true;
+    }
+
+    bool remove(const K key) {
+      size_t bucketIndex = getBucketIndex(key);
+      HashNode<K, V> * prevNode = nullptr;
+      HashNode<K, V> * node = buckets[bucketIndex];
+
+      while (node != nullptr && node->getKey() != key) {
+        prevNode = node;
+        node = node->getNext();
+      }
+
+      if (node && node->getKey() == key) {
+        if (prevNode != nullptr) {
+          prevNode->setNext(node->getNext());
+        } else {
+          buckets[bucketIndex] = nullptr;
+        }
+
+        delete node;
+        itemCount--;
+
+        return true;
+      }
 
       return false;
     }
 
+    size_t count() {
+      return itemCount;
+    }
+
   private:
-    size_t bucketSize;
-    HashNode<K, V> * * bucket;
+    size_t itemCount;
+    size_t bucketCount;
+    HashNode<K, V> * * buckets;
     H hash;
 
     size_t getBucketIndex(const K key) {
-      return hash(key) % bucketSize;
+      return hash(key) % bucketCount;
     }
 };
 
 int main() {
-  HashMap<unsigned long long int, string> map;
+  HashMap<unsigned long int, string> map;
 
   for (int i = 0; i < 10; i++) {
     map.set(i, "foo" + to_string(i));
@@ -129,7 +143,9 @@ int main() {
   cout << "4 equals " << map.get(4) << endl;
   cout << "5 equals " << map.get(5) << endl;
   cout << "6 equals " << map.get(6) << endl;
+  cout << "there are " << map.count() << " items in the map" << endl;
   map.remove(5);
+  cout << "there are " << map.count() << " items in the map" << endl;
   cout << "4 equals " << map.get(4) << endl;
   cout << "5 equals " << map.get(5) << endl;
   cout << "6 equals " << map.get(6) << endl;
