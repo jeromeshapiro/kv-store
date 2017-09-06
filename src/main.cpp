@@ -102,6 +102,8 @@ class HashMap {
 
       if (prevNode != nullptr) {
         prevNode->setNext(node->getNext());
+      } else {
+        bucket[bucketIndex] = nullptr;
       }
       delete node;
 
@@ -119,7 +121,7 @@ class HashMap {
 };
 
 int main() {
-  HashMap<int, string> map(1);
+  HashMap<int, string> map(1000000);
 
   for (int i = 0; i < 10; i++) {
     map.set(i, "foo" + to_string(i));
