@@ -50,6 +50,12 @@ class HashMap {
       this->bucketArr = new HashNode<K, V>* [bucketCount]();
     }
 
+    ~HashMap() {
+      clearBucketArr(this->bucketArr, this->bucketCount);
+      delete[] this->bucketArr;
+      this->bucketArr = nullptr;
+    }
+
     V get(const K key) {
       size_t index = getBucketIndex(key, bucketCount);
       HashNode<K, V>* node = this->bucketArr[index];
@@ -172,8 +178,6 @@ class HashMap {
       const size_t newBucketCount = bucketCount * 2;
       HashNode<K, V>** newBucketArr = new HashNode<K, V>* [newBucketCount]();
 
-      //cout << "inflating bucket array from " << bucketCount << " to " << newBucketCount << " now we have " << this->collisions << " collisions and " << this->itemCount << " items." << endl;
-
       for (int bucketArrIndex = 0; bucketArrIndex < bucketCount; bucketArrIndex++) {
         HashNode<K, V>* node = this->bucketArr[bucketArrIndex];
         while (node != nullptr) {
@@ -200,16 +204,17 @@ int main() {
   for (int i = 0; i < 30000000; i++) {
     map.set(i, "foo");
   }
-  // cout << "4 equals " << map.get(4) << endl;
-  // cout << "5 equals " << map.get(5) << endl;
-  // cout << "there are " << map.count() << " items in the map" << endl;
-  // cout << "deleting key 5" << endl;
-  // map.remove(5);
-  // cout << "there are " << map.count() << " items in the map" << endl;
-  // cout << "4 equals " << map.get(4) << endl;
-  // cout << "5 equals " << map.get(5) << endl;
-  // //map.clear();
-  // cout << "there are " << map.count() << " items in the map" << endl;
-  // cout << "4 equals " << map.get(4) << endl;
+
+  cout << "4 equals " << map.get(4) << endl;
+  cout << "5 equals " << map.get(5) << endl;
+  cout << "there are " << map.count() << " items in the map" << endl;
+  cout << "deleting key 5" << endl;
+  map.remove(5);
+  cout << "there are " << map.count() << " items in the map" << endl;
+  cout << "4 equals " << map.get(4) << endl;
+  cout << "5 equals " << map.get(5) << endl;
+  //map.clear();
+  cout << "there are " << map.count() << " items in the map" << endl;
+  cout << "4 equals " << map.get(4) << endl;
   return 0;
 }
