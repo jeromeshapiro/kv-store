@@ -38,12 +38,8 @@ namespace kvmap {
 
   template<typename K, typename V, typename H = std::hash<K> >
   class HashMap {
-    static const int BUCKET_START_SIZE = 16;
-    const int BUCKET_RESIZE_FACTOR = 2;
-    const double BUCKET_RESIZE_THRESHOLD = 0.6;
-
     public:
-      HashMap(std::size_t bucketCount = BUCKET_START_SIZE) {
+      HashMap(std::size_t bucketCount = 16) {
         this->itemCount = 0;
         this->bucketCount = bucketCount > 0 ? bucketCount : 1;
         this->bucketArr = new HashNode<K, V>* [bucketCount]();
@@ -175,7 +171,7 @@ namespace kvmap {
       }
 
       void inflateBucketArr() {
-        const std::size_t newBucketCount = bucketCount * BUCKET_RESIZE_FACTOR;
+        const std::size_t newBucketCount = bucketCount * 2;
         HashNode<K, V>** newBucketArr = new HashNode<K, V>* [newBucketCount]();
 
         for (int bucketArrIndex = 0; bucketArrIndex < bucketCount; bucketArrIndex++) {
@@ -194,7 +190,7 @@ namespace kvmap {
       }
 
       const bool bucketArrHasReachedThreshold() const {
-        return this->itemCount >= this->bucketCount * BUCKET_RESIZE_THRESHOLD;
+        return this->itemCount >= this->bucketCount * 0.6;
       }
   };
 }

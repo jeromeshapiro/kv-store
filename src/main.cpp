@@ -3,10 +3,10 @@
 #include "hashMap.cpp"
 
 int main() {
-  kvmap::HashMap<unsigned, std::string> map;
+  kvmap::HashMap<unsigned, unsigned> map;
 
-  for (int i = 0; i < 1000000; i++) {
-    map.set(i, "foo");
+  for (int i = 0; i < 3566480; i++) {
+    map.set(i, i);
   }
 
   std::cout << "4 equals " << map.get(4) <<std:: endl;
