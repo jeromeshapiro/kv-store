@@ -3,9 +3,9 @@
 #include "hashMap.cpp"
 
 int main() {
-  kvmap::HashMap<unsigned, unsigned> map;
+  kvmap::HashMap<unsigned, int> map;
 
-  for (int i = 0; i < 3566480; i++) {
+  for (int i = 0; i < 5; i++) {
     map.set(i, i);
   }
 
@@ -17,7 +17,7 @@ int main() {
   std::cout << "there are " << map.count() << " items in the map" << std::endl;
   std::cout << "4 equals " << map.get(4) << std::endl;
   std::cout << "5 equals " << map.get(5) << std::endl;
-  map.clear();
+  //map.clear();
   std::cout << "there are " << map.count() << " items in the map" << std::endl;
   std::cout << "4 equals " << map.get(4) << std::endl;
   return 0;

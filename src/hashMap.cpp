@@ -40,7 +40,7 @@ namespace kvmap {
   class HashMap {
     public:
       HashMap(std::size_t bucketCount = 16) {
-        this->itemCount = 0;
+        this->nodeCount.reset();
         this->bucketCount = bucketCount > 0 ? bucketCount : 1;
         this->bucketArr = new HashNode<K, V>* [bucketCount]();
       }
@@ -91,7 +91,9 @@ namespace kvmap {
           } else {
             this->bucketArr[index] = nullptr;
           }
-          this->itemCount--;
+
+          this->nodeCount.decrement();
+
           delete node;
           return true;
         }
@@ -100,17 +102,23 @@ namespace kvmap {
       }
 
       void clear() {
-        this->itemCount = 0;
+        this->nodeCount.reset();
         clearBucketArr(bucketArr, bucketCount);
-        this->bucketArr = new HashNode<K, V>* [bucketCount]();
       }
 
       std::size_t count() const {
-        return itemCount;
+        return this->nodeCount.val;
       }
 
     private:
-      std::size_t itemCount;
+      struct nodeCounter {
+        std::size_t val = 0;
+        void increment() { val++; }
+        void decrement() { val--; }
+        void reset() { val = 0; }
+      };
+      nodeCounter nodeCount;
+
       std::size_t bucketCount;
       HashNode<K, V>** bucketArr;
       H hash;
@@ -123,7 +131,7 @@ namespace kvmap {
         if (bucketArrHasReachedThreshold()) {
           inflateBucketArr();
         }
-        itemCount++;
+        nodeCount.increment();
         std::size_t index = getBucketIndex(key, bucketCount);
         return addToBucket(this->bucketArr, index, key, value, upsert);
       }
@@ -190,7 +198,7 @@ namespace kvmap {
       }
 
       const bool bucketArrHasReachedThreshold() const {
-        return this->itemCount >= this->bucketCount * 0.6;
+        return this->nodeCount.val >= this->bucketCount * 0.6;
       }
   };
 }
