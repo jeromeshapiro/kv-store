@@ -1,8 +1,9 @@
 CC = g++
-FLAGS = -std=c++11
-SRC = src/main.cpp src/hashMap.cpp
-TARGET = bin/test
+FLAGS = -std=c++14
+SRC = src/main.cpp
+DEPS = src/hashMap.h src/hashMapNode.h
+TARGET = bin/app
 
-all: $(SRC)
+all: $(SRC) $(DEPS)
 	$(CC) $(FLAGS) -o $(TARGET) $(SRC)
 

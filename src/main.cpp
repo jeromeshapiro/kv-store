@@ -1,11 +1,11 @@
 #include <iostream>
 #include <string>
-#include "hashMap.cpp"
+#include "hashMap.h"
 
 int main() {
-  kvmap::HashMap<unsigned, int> map;
+  kvmap::HashMap<unsigned, unsigned> map(2);
 
-  for (int i = 0; i < 5; i++) {
+  for (int i = 1; i < 6; i++) {
     map.set(i, i);
   }
 
