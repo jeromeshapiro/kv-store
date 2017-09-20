@@ -8,11 +8,13 @@
 namespace kvmap {
   template<typename K, typename V, typename H = std::hash<K>>
   class HashMap {
+    typedef HashMapNode<K, V> Node;
+
     public:
       HashMap(std::size_t count = 16) : _bucketCount(count) {
         _nodeCount.reset();
-        _bucketArr = new HashMapNode<K, V>* [_bucketCount]();
-        _endNode = new HashMapNode<K, V>(1, 2);
+        _bucketArr = new Node* [_bucketCount]();
+        _endNode = new Node(1, 2);
       }
 
       ~HashMap() {
@@ -23,14 +25,14 @@ namespace kvmap {
 
       bool exists(const K key) {
         std::size_t index = getBucketIndex(key, _bucketCount);
-        HashMapNode<K, V>* node = _bucketArr[index];
+        Node* node = _bucketArr[index];
 
         while (node != nullptr) {
           if (node->getKey() == key) {
             return true;
-          } else {
-            node = node->getNext();
           }
+          
+          node = node->getNext();
         }
 
         return false;
@@ -38,14 +40,14 @@ namespace kvmap {
 
       V get(const K key) {
         std::size_t index = getBucketIndex(key, _bucketCount);
-        HashMapNode<K, V>* node = _bucketArr[index];
+        Node* node = _bucketArr[index];
 
         while (node != nullptr) {
           if (node->getKey() == key) {
             return node->getValue();
-          } else {
-            node = node->getNext();
           }
+
+          node = node->getNext();
         }
         
         return 0;
@@ -61,8 +63,8 @@ namespace kvmap {
 
       bool remove(const K key) {
         std::size_t index = getBucketIndex(key, _bucketCount);
-        HashMapNode<K, V>* prevNode = nullptr;
-        HashMapNode<K, V>* node = _bucketArr[index];
+        Node* prevNode = nullptr;
+        Node* node = _bucketArr[index];
 
         while (node != nullptr && node->getKey() != key) {
           prevNode = node;
@@ -104,8 +106,8 @@ namespace kvmap {
 
       nodeCounter _nodeCount;
       std::size_t _bucketCount;
-      HashMapNode<K, V>** _bucketArr;
-      HashMapNode<K, V>* _endNode;
+      Node** _bucketArr;
+      Node* _endNode;
       H hashFunc;
 
       std::size_t getBucketIndex(const K key, const std::size_t bucketCount) const {
@@ -121,9 +123,9 @@ namespace kvmap {
         return addToBucket(_bucketArr, index, key, value, upsert);
       }
 
-      bool addToBucket(HashMapNode<K, V>** bucketArr, const std::size_t index, const K key, const V value, const bool upsert = false) {
-        HashMapNode<K, V>* prevNode = nullptr;
-        HashMapNode<K, V>* node = bucketArr[index];
+      bool addToBucket(Node** bucketArr, const std::size_t index, const K key, const V value, const bool upsert = false) {
+        Node* prevNode = nullptr;
+        Node* node = bucketArr[index];
 
         while (node != nullptr && node->getKey() != key) {
           prevNode = node;
@@ -131,12 +133,13 @@ namespace kvmap {
         }
 
         if (node == nullptr) {
-          //std::shared_ptr<HashMapNode<K, V>> node = std::make_shared<HashMapNode<K, V>>(key, value);
-          node = new HashMapNode<K, V>(key, value);
+          node = new Node(key, value);
+          std::unique_ptr<Node> node2 = std::make_unique<Node>(key, value);
           if (prevNode == nullptr) {
             bucketArr[index] = node;
           } else {
             prevNode->setNext(node);
+            prevNode->setNextNode(std::move(node2));
           }
           return true;
         }
@@ -149,16 +152,16 @@ namespace kvmap {
         return false;
       }
 
-      void clearBucket(HashMapNode<K, V>** bucketArr, const std::size_t index) {
-        HashMapNode<K, V>* node = bucketArr[index];
+      void clearBucket(Node** bucketArr, const std::size_t index) {
+        Node* node = bucketArr[index];
         while (node != nullptr) {
-          HashMapNode<K, V>* prevNode = node;
+          Node* prevNode = node;
           node = node->getNext();
           delete prevNode;
         }
       }
 
-      void clearBucketArr(HashMapNode<K, V>** bucketArr, const std::size_t bucketCount) {
+      void clearBucketArr(Node** bucketArr, const std::size_t bucketCount) {
         for (int index = 0; index < bucketCount; index++) {
           clearBucket(bucketArr, index);
         }
@@ -166,10 +169,10 @@ namespace kvmap {
 
       void inflateBucketArr() {
         const std::size_t newBucketCount = _bucketCount * 2;
-        HashMapNode<K, V>** newBucketArr = new HashMapNode<K, V>* [newBucketCount]();
+        Node** newBucketArr = new Node* [newBucketCount]();
 
         for (int bucketArrIndex = 0; bucketArrIndex < _bucketCount; bucketArrIndex++) {
-          HashMapNode<K, V>* node = _bucketArr[bucketArrIndex];
+          Node* node = _bucketArr[bucketArrIndex];
           while (node != nullptr) {
             std::size_t newBucketArrIndex = getBucketIndex(node->getKey(), newBucketCount);
             addToBucket(newBucketArr, newBucketArrIndex, node->getKey(), node->getValue());
@@ -190,3 +193,4 @@ namespace kvmap {
 }
 
 #endif /* HASHMAP_H_ */
+

@@ -18,7 +18,12 @@ namespace kvmap {
 
       HashMapNode* getNext() const { return _next; }
 
-      void setNext(HashMapNode<K, V>* node) { _next = node; _nextNode = node; }
+      void setNext(HashMapNode<K, V>* node) { _next = node; }
+
+      void setNextNode(nextNode node) {
+        std::cout << "setting next node" << std::endl;
+        _nextNode = std::move(node);
+      }
 
     private:
       K _key;
