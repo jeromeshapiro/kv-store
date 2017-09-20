@@ -1,40 +1,30 @@
 #ifndef HASHMAPNODE_H_
 #define HASHMAPNODE_H_
 
+#include <memory>
+
 namespace kvmap {
   template<typename K, typename V>
   class HashMapNode {
+    typedef std::unique_ptr<HashMapNode<K, V>> nextNode;
     public:
-      HashMapNode(const K key, const V value) {
-        this->key = key;
-        this->value = value;
-        this->next = nullptr;
-      }
+      HashMapNode(const K key, const V val) : _key(key), _val(val), _next(nullptr) {}
 
-      K getKey() const {
-        return this->key;
-      }
+      K getKey() const { return _key; }
 
-      V getValue() const {
-        return this->value;
-      }
+      V getValue() const { return _val; }
 
-      void setValue(const V value) {
-        this->value = value;
-      }
+      void setValue(const V val) { _val = val; }
 
-      HashMapNode* getNext() const {
-        return this->next;
-      }
+      HashMapNode* getNext() const { return _next; }
 
-      void setNext(HashMapNode<K, V>* node) {
-        this->next = node;
-      }
+      void setNext(HashMapNode<K, V>* node) { _next = node; _nextNode = node; }
 
     private:
-      K key;
-      V value;
-      HashMapNode* next;
+      K _key;
+      V _val;
+      HashMapNode* _next;
+      nextNode _nextNode;
   };
 }
 

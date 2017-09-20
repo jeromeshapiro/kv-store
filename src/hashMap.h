@@ -6,13 +6,12 @@
 #include "hashMapNode.h"
 
 namespace kvmap {
-  template<typename K, typename V, typename H = std::hash<K> >
+  template<typename K, typename V, typename H = std::hash<K>>
   class HashMap {
     public:
-      HashMap(std::size_t bucketCount = 16) {
+      HashMap(std::size_t count = 16) : _bucketCount(count) {
         _nodeCount.reset();
-        _bucketCount = bucketCount;
-        _bucketArr = new HashMapNode<K, V>* [bucketCount]();
+        _bucketArr = new HashMapNode<K, V>* [_bucketCount]();
         _endNode = new HashMapNode<K, V>(1, 2);
       }
 
