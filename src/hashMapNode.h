@@ -6,7 +6,6 @@
 namespace kvmap {
   template<typename K, typename V>
   class HashMapNode {
-    typedef std::unique_ptr<HashMapNode<K, V>> nextNode;
     public:
       HashMapNode(const K key, const V val) : _key(key), _val(val), _next(nullptr) {}
 
@@ -20,16 +19,10 @@ namespace kvmap {
 
       void setNext(HashMapNode<K, V>* node) { _next = node; }
 
-      void setNextNode(nextNode node) {
-        std::cout << "setting next node" << std::endl;
-        _nextNode = std::move(node);
-      }
-
     private:
       K _key;
       V _val;
       HashMapNode* _next;
-      nextNode _nextNode;
   };
 }
 
