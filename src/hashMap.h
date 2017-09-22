@@ -11,8 +11,8 @@ namespace kvmap {
     typedef HashMapNode<K, V> Node;
 
     public:
-      HashMap(std::size_t count = 16) : _numberOfBuckets(count) {
-        _buckets = new Node* [_numberOfBuckets]();
+      HashMap(std::size_t count = 16) : _numberOfBuckets(count), _initialNumberOfBuckets(count) {
+        _buckets = new Node* [_initialNumberOfBuckets]();
       }
 
       ~HashMap() {
@@ -22,14 +22,13 @@ namespace kvmap {
       }
 
       bool exists(const K key) {
-        std::size_t index = getBucketIndex(key, _numberOfBuckets);
-        Node* node = _buckets[index];
+        std::size_t bucketIndex = getBucketIndex(key, _numberOfBuckets);
+        Node* node = _buckets[bucketIndex];
 
         while (node != nullptr) {
           if (node->getKey() == key) {
             return true;
           }
-          
           node = node->getNext();
         }
 
@@ -37,14 +36,13 @@ namespace kvmap {
       }
 
       V get(const K key) {
-        std::size_t index = getBucketIndex(key, _numberOfBuckets);
-        Node* node = _buckets[index];
+        std::size_t bucketIndex = getBucketIndex(key, _numberOfBuckets);
+        Node* node = _buckets[bucketIndex];
 
         while (node != nullptr) {
           if (node->getKey() == key) {
             return node->getValue();
           }
-
           node = node->getNext();
         }
         
@@ -79,6 +77,7 @@ namespace kvmap {
           _nodeCount.decrement();
 
           delete node;
+          node = nullptr;
           return true;
         }
 
@@ -88,6 +87,9 @@ namespace kvmap {
       void clear() {
         _nodeCount.reset();
         deleteBuckets(_buckets, _numberOfBuckets);
+        delete[] _buckets;
+        _numberOfBuckets = _initialNumberOfBuckets;
+        _buckets = new Node* [_initialNumberOfBuckets]();
       }
 
       std::size_t count() const {
@@ -102,7 +104,7 @@ namespace kvmap {
         void reset() { val = 0; }
       } _nodeCount;
 
-      std::size_t _numberOfBuckets;
+      std::size_t _numberOfBuckets, _initialNumberOfBuckets;
       Node** _buckets;
       H hashFunc;
 
@@ -153,6 +155,7 @@ namespace kvmap {
           prevNode = node;
           node = node->getNext();
           delete prevNode;
+          prevNode = nullptr;
         }
       }
 
