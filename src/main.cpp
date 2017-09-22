@@ -3,7 +3,7 @@
 #include "hashMap.h"
 
 int main() {
-  kvmap::HashMap<unsigned, unsigned>* map = new kvmap::HashMap<unsigned, unsigned>;
+  kvmap::HashMap<unsigned, unsigned>* map = new kvmap::HashMap<unsigned, unsigned>(1);
 
   for (int i = 1; i < 1001; i++) {
     map->set(i, i);

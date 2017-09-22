@@ -11,12 +11,12 @@ namespace kvmap {
     typedef HashMapNode<K, V> Node;
 
     public:
-      HashMap(std::size_t count = 16) : _numberOfBuckets(count), _initialNumberOfBuckets(count) {
+      HashMap(const std::size_t count = 16) : _numberOfBuckets(count), _initialNumberOfBuckets(count) {
         _buckets = new Node* [_initialNumberOfBuckets]();
       }
 
       ~HashMap() {
-        deleteBuckets(_buckets, _numberOfBuckets);
+        deleteAllBuckets();
         delete[] _buckets;
         _buckets = nullptr;
       }
@@ -75,9 +75,9 @@ namespace kvmap {
           }
 
           _nodeCount.decrement();
-
           delete node;
           node = nullptr;
+
           return true;
         }
 
@@ -86,7 +86,7 @@ namespace kvmap {
 
       void clear() {
         _nodeCount.reset();
-        deleteBuckets(_buckets, _numberOfBuckets);
+        deleteAllBuckets();
         delete[] _buckets;
         _numberOfBuckets = _initialNumberOfBuckets;
         _buckets = new Node* [_initialNumberOfBuckets]();
@@ -148,9 +148,9 @@ namespace kvmap {
         return false;
       }
 
-      void deleteBucket(Node** buckets, const std::size_t bucketIndex) {
+      void deleteBucket(const std::size_t bucketIndex) {
         Node* prevNode = nullptr;
-        Node* node = buckets[bucketIndex];
+        Node* node = _buckets[bucketIndex];
         while (node != nullptr) {
           prevNode = node;
           node = node->getNext();
@@ -159,9 +159,9 @@ namespace kvmap {
         }
       }
 
-      void deleteBuckets(Node** buckets, const std::size_t bucketCount) {
-        for (int index = 0; index < bucketCount; index++) {
-          deleteBucket(buckets, index);
+      void deleteAllBuckets() {
+        for (int i = 0; i < _numberOfBuckets; i++) {
+          deleteBucket(i);
         }
       }
 
@@ -176,7 +176,7 @@ namespace kvmap {
             addToBucket(newBuckets, newBucketIndex, node->getKey(), node->getValue());
             node = node->getNext();
           }
-          deleteBucket(_buckets, bucketIndex);
+          deleteBucket(bucketIndex);
         }
 
         delete[] _buckets;
