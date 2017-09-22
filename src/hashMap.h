@@ -11,21 +11,19 @@ namespace kvmap {
     typedef HashMapNode<K, V> Node;
 
     public:
-      HashMap(std::size_t count = 16) : _bucketCount(count) {
-        _nodeCount.reset();
-        _bucketArr = new Node* [_bucketCount]();
-        _endNode = new Node(1, 2);
+      HashMap(std::size_t count = 16) : _numberOfBuckets(count) {
+        _buckets = new Node* [_numberOfBuckets]();
       }
 
       ~HashMap() {
-        clearBucketArr(_bucketArr, _bucketCount);
-        delete[] _bucketArr;
-        _bucketArr = nullptr;
+        deleteBuckets(_buckets, _numberOfBuckets);
+        delete[] _buckets;
+        _buckets = nullptr;
       }
 
       bool exists(const K key) {
-        std::size_t index = getBucketIndex(key, _bucketCount);
-        Node* node = _bucketArr[index];
+        std::size_t index = getBucketIndex(key, _numberOfBuckets);
+        Node* node = _buckets[index];
 
         while (node != nullptr) {
           if (node->getKey() == key) {
@@ -39,8 +37,8 @@ namespace kvmap {
       }
 
       V get(const K key) {
-        std::size_t index = getBucketIndex(key, _bucketCount);
-        Node* node = _bucketArr[index];
+        std::size_t index = getBucketIndex(key, _numberOfBuckets);
+        Node* node = _buckets[index];
 
         while (node != nullptr) {
           if (node->getKey() == key) {
@@ -62,9 +60,9 @@ namespace kvmap {
       }
 
       bool remove(const K key) {
-        std::size_t index = getBucketIndex(key, _bucketCount);
+        std::size_t index = getBucketIndex(key, _numberOfBuckets);
         Node* prevNode = nullptr;
-        Node* node = _bucketArr[index];
+        Node* node = _buckets[index];
 
         while (node != nullptr && node->getKey() != key) {
           prevNode = node;
@@ -75,7 +73,7 @@ namespace kvmap {
           if (prevNode != nullptr) {
             prevNode->setNext(node->getNext());
           } else {
-            _bucketArr[index] = nullptr;
+            _buckets[index] = nullptr;
           }
 
           _nodeCount.decrement();
@@ -89,7 +87,7 @@ namespace kvmap {
 
       void clear() {
         _nodeCount.reset();
-        clearBucketArr(_bucketArr, _bucketCount);
+        deleteBuckets(_buckets, _numberOfBuckets);
       }
 
       std::size_t count() const {
@@ -102,12 +100,10 @@ namespace kvmap {
         void increment() { val++; }
         void decrement() { val--; }
         void reset() { val = 0; }
-      };
+      } _nodeCount;
 
-      nodeCounter _nodeCount;
-      std::size_t _bucketCount;
-      Node** _bucketArr;
-      Node* _endNode;
+      std::size_t _numberOfBuckets;
+      Node** _buckets;
       H hashFunc;
 
       std::size_t getBucketIndex(const K key, const std::size_t bucketCount) const {
@@ -115,17 +111,17 @@ namespace kvmap {
       }
 
       bool insert(const K key, const V value, const bool upsert = false) {
-        if (bucketArrHasReachedThreshold()) {
-          inflateBucketArr();
+        if (bucketsHaveReachedThreshold()) {
+          inflateBuckets();
         }
         _nodeCount.increment();
-        std::size_t index = getBucketIndex(key, _bucketCount);
-        return addToBucket(_bucketArr, index, key, value, upsert);
+        std::size_t bucketIndex = getBucketIndex(key, _numberOfBuckets);
+        return addToBucket(_buckets, bucketIndex, key, value, upsert);
       }
 
-      bool addToBucket(Node** bucketArr, const std::size_t index, const K key, const V value, const bool upsert = false) {
+      bool addToBucket(Node** buckets, const std::size_t bucketIndex, const K key, const V value, const bool upsert = false) {
         Node* prevNode = nullptr;
-        Node* node = bucketArr[index];
+        Node* node = buckets[bucketIndex];
 
         while (node != nullptr && node->getKey() != key) {
           prevNode = node;
@@ -134,12 +130,10 @@ namespace kvmap {
 
         if (node == nullptr) {
           node = new Node(key, value);
-          std::unique_ptr<Node> node2 = std::make_unique<Node>(key, value);
           if (prevNode == nullptr) {
-            bucketArr[index] = node;
+            buckets[bucketIndex] = node;
           } else {
             prevNode->setNext(node);
-            prevNode->setNextNode(std::move(node2));
           }
           return true;
         }
@@ -152,42 +146,43 @@ namespace kvmap {
         return false;
       }
 
-      void clearBucket(Node** bucketArr, const std::size_t index) {
-        Node* node = bucketArr[index];
+      void deleteBucket(Node** buckets, const std::size_t bucketIndex) {
+        Node* prevNode = nullptr;
+        Node* node = buckets[bucketIndex];
         while (node != nullptr) {
-          Node* prevNode = node;
+          prevNode = node;
           node = node->getNext();
           delete prevNode;
         }
       }
 
-      void clearBucketArr(Node** bucketArr, const std::size_t bucketCount) {
+      void deleteBuckets(Node** buckets, const std::size_t bucketCount) {
         for (int index = 0; index < bucketCount; index++) {
-          clearBucket(bucketArr, index);
+          deleteBucket(buckets, index);
         }
       }
 
-      void inflateBucketArr() {
-        const std::size_t newBucketCount = _bucketCount * 2;
-        Node** newBucketArr = new Node* [newBucketCount]();
+      void inflateBuckets() {
+        const std::size_t newNumberOfBuckets = _numberOfBuckets * 2;
+        Node** newBuckets = new Node* [newNumberOfBuckets]();
 
-        for (int bucketArrIndex = 0; bucketArrIndex < _bucketCount; bucketArrIndex++) {
-          Node* node = _bucketArr[bucketArrIndex];
+        for (int bucketIndex = 0; bucketIndex < _numberOfBuckets; bucketIndex++) {
+          Node* node = _buckets[bucketIndex];
           while (node != nullptr) {
-            std::size_t newBucketArrIndex = getBucketIndex(node->getKey(), newBucketCount);
-            addToBucket(newBucketArr, newBucketArrIndex, node->getKey(), node->getValue());
+            std::size_t newBucketIndex = getBucketIndex(node->getKey(), newNumberOfBuckets);
+            addToBucket(newBuckets, newBucketIndex, node->getKey(), node->getValue());
             node = node->getNext();
           }
-          clearBucket(_bucketArr, bucketArrIndex);
+          deleteBucket(_buckets, bucketIndex);
         }
 
-        delete[] _bucketArr;
-        _bucketArr = newBucketArr;
-        _bucketCount = newBucketCount;
+        delete[] _buckets;
+        _buckets = newBuckets;
+        _numberOfBuckets = newNumberOfBuckets;
       }
 
-      const bool bucketArrHasReachedThreshold() const {
-        return _nodeCount.val >= _bucketCount * 0.6;
+      const bool bucketsHaveReachedThreshold() const {
+        return _nodeCount.val >= _numberOfBuckets * 0.6;
       }
   };
 }
