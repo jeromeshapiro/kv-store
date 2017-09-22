@@ -22,7 +22,7 @@ namespace kvmap {
       }
 
       bool exists(const K key) {
-        std::size_t bucketIndex = getBucketIndex(key, _numberOfBuckets);
+        const std::size_t bucketIndex = getBucketIndex(key, _numberOfBuckets);
         Node* node = _buckets[bucketIndex];
 
         while (node != nullptr) {
@@ -36,7 +36,7 @@ namespace kvmap {
       }
 
       V get(const K key) {
-        std::size_t bucketIndex = getBucketIndex(key, _numberOfBuckets);
+        const std::size_t bucketIndex = getBucketIndex(key, _numberOfBuckets);
         Node* node = _buckets[bucketIndex];
 
         while (node != nullptr) {
@@ -58,7 +58,7 @@ namespace kvmap {
       }
 
       bool remove(const K key) {
-        std::size_t index = getBucketIndex(key, _numberOfBuckets);
+        const std::size_t index = getBucketIndex(key, _numberOfBuckets);
         Node* prevNode = nullptr;
         Node* node = _buckets[index];
 
@@ -117,7 +117,7 @@ namespace kvmap {
           inflateBuckets();
         }
         _nodeCount.increment();
-        std::size_t bucketIndex = getBucketIndex(key, _numberOfBuckets);
+        const std::size_t bucketIndex = getBucketIndex(key, _numberOfBuckets);
         return addToBucket(_buckets, bucketIndex, key, value, upsert);
       }
 
@@ -172,7 +172,7 @@ namespace kvmap {
         for (int bucketIndex = 0; bucketIndex < _numberOfBuckets; bucketIndex++) {
           Node* node = _buckets[bucketIndex];
           while (node != nullptr) {
-            std::size_t newBucketIndex = getBucketIndex(node->getKey(), newNumberOfBuckets);
+            const std::size_t newBucketIndex = getBucketIndex(node->getKey(), newNumberOfBuckets);
             addToBucket(newBuckets, newBucketIndex, node->getKey(), node->getValue());
             node = node->getNext();
           }

@@ -5,10 +5,10 @@
 int main() {
   kvmap::HashMap<unsigned, unsigned>* map = new kvmap::HashMap<unsigned, unsigned>;
 
-  for (int i = 1; i < 1000000001; i++) {
+  for (int i = 1; i < 1001; i++) {
     map->set(i, i);
   }
-/*
+
   std::cout << "1 equals " << map->get(1) <<std:: endl;
   std::cout << "2 equals " << map->get(2) <<std:: endl;
   std::cout << "3 equals " << map->get(3) <<std:: endl;
@@ -32,6 +32,6 @@ int main() {
   std::cout << "4 equals " << map->get(4) << std::endl;
   std::cout << "5 equals " << map->get(5) << std::endl;
  
-  delete map;*/
+  delete map;
   return 0;
 }
